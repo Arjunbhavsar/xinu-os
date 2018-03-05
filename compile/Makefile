@@ -257,3 +257,10 @@ depclean:
 	echo "" > $(DEPSFILE)
 
 -include $(DEPSFILE)
+
+.PHONY: agrade
+agrade: 
+	@ agrade/python/main.py -s @dir$(shell readlink -f ../) -g $(shell readlink -f agrade/samples/a1.io)
+	@ cat ../../stats__*.log
+	@ echo
+	@ rm ../../stats__*.log ../../stats__*.html ../stats__*.json
