@@ -261,7 +261,7 @@ depclean:
 .PHONY: agrade
 agrade: 
 	@ cd ../ ; git submodule init; git submodule update --recursive --remote ; cd -
-	@ agrade/python/main.py -s @dir$(shell readlink -f ../) -g $(shell readlink -f agrade/samples/a1.io)
+	@ agrade/python/main.py -s @dir$(shell readlink -f ../) -g $(shell readlink -f agrade/samples/a_utest.io)
 	@ cat ../../stats__*.log
 	@ echo
 	@ rm ../../stats__*.log ../../stats__*.html ../stats__*.json
