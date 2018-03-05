@@ -1,0 +1,3 @@
+[submodule "compile/agrade"]
+	path = compile/agrade
+	url = https://github.iu.edu/SOIC-Operating-Systems/QemuInspector.git
