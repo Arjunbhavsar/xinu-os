@@ -5,7 +5,7 @@
 #include <string.h>
 
 shellcmd xsh_hello(int nargs,char *args[]){
-
+	/*Refered from xsh_date.c */
 	if (nargs == 2 && strncmp(args[1], "--help", 7) == 0) {
 		printf("Usage: %s\n\n", args[0]);
 		printf("Description:\n");
