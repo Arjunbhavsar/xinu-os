@@ -1,0 +1,11 @@
+Question.1-> Does your program output any garbage? If yes, why?
+	-Yes, As in the program we have 'n' as a global variable which can be accessed 
+      through multiple programs at a time. Here produce.c and consume.c both are trying to access variable 'n' at same time.
+      As produce.c is updating the global variable 'n' while at the same time consume.c is reading the same variable. 
+      So consume.c file is accessing the values which are available for variable 'n' in iteration.
+      Also as there is no lock provided for the global variable so the changes are uneven and resulting in creation of the garbage value.
+    
+Quetion.2-> Are all the produced values getting consumed? Check your program for a small count like 20.
+	-No, Only some of the produced values are getting consumed by consume.c. As there is no
+         synchronization between produce.c and consume.c. the loop inside producer will update the value of 'n'
+         while consume.c will read the value asynchronously resulting in consuming only partial values.
