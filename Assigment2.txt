@@ -9,3 +9,25 @@ Quetion.2-> Are all the produced values getting consumed? Check your program for
 	-No, Only some of the produced values are getting consumed by consume.c. As there is no
          synchronization between produce.c and consume.c. the loop inside producer will update the value of 'n'
          while consume.c will read the value asynchronously resulting in consuming only partial values.
+
+
+Here in the Assignment following functions are used-
+1)Consume.c - This function will access the value of global variable 'n' iteratively.
+void consumer(int count) {
+
+   for(int i=0;i<=count ; i++){
+	printf("\n consumed :%d",n);
+   }
+}
+
+2)Produce.c - This function will update the global variable 'n' Iteratively.
+
+void producer(int count) {
+
+    for(int j=0;j<=count;j++){
+        n= j;
+	printf("\n produced : %d",n);
+    }
+}
+
+3) xsh_prodcons.c- This class contains the method to make 'prodcons' a command which will decide the count for the iterations to perform in produce.c and consume.c
