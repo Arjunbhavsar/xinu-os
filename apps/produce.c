@@ -25,7 +25,7 @@ void producer_bb(int count) {
   // print producer process name and written value as,
   // name : producer_1, write : 8
 
-  for (int j =0 ;j<=count; j++){
+  for (int j =0 ;j<count; j++){
 	 
 	  wait(consume);
 	  

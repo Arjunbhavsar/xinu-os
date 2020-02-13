@@ -23,7 +23,7 @@ void consumer_bb(int count) {
   // name : consumer_1, read : 8
  int temp;
 
- for (int i =0; i<= count;i++){
+ for (int i =0; i< count;i++){
 	wait(produce);
 	// Consuming the value from global Array
 	temp = arr_q[(consumerIndices++)%5]; 
