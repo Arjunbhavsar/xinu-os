@@ -1,0 +1,24 @@
+
+
+Here we are using the concept of dynamic Programming to create fibonachchi series,
+using the the concept of "futures".
+
+We will use the mode FUTURE_SHARED to achieve the goal.
+
+The main reason behind this is as follows,
+    1) With the use of concept dynamic Programming our focus is mainly on reusing the stored values.
+    2) In FUTURE_SHARED mode we are allowed to consume the produced values multiple time.
+    3) Also after consuming the value from the future it will not change it's state from 
+        FUTURE_READY to FUTURE_EMPTY it remains in FUTURE_READY state.
+    4) And until the future is in FUTURE_READY state we can reuse the value of the future as many 
+        times as wanted.
+
+Example.  :
+To get value 6 th digit in fibonachchi series.
+    we will need to add values in fibfut[ 4 ] and fibfut[ 5 ]
+
+Now, to get value in 7th digit fibonachchi series.
+    we will need to add values in fibfut[ 5 ] and fibfut[ 6 ]
+
+here, value for future fibfut[ 5 ] is getting called two times. 
+Hence the FUTURE_SHARED mode is used.
