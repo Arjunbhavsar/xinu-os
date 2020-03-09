@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include <future.h>
 #include <future_test.h>
-
+#include <stream.h>
 /*------------------------------------------------------------------------
  * xsh_run - obtain and print the current month, day, year, and time
  *------------------------------------------------------------------------
@@ -91,8 +91,12 @@ shellcmd xsh_run(int nargs, char *args[]) {
     	if(strncmp(args[0], "prodcons_bb", 13) == 0) {
  		/* create a process with the function as an entry point. */
       		resume (create((void *)prodcons_bb, 4096, 20, "prodcons_bb", 2, nargs, args));
-	}
-	
+		}
+		if(strncmp(args[0], "tscdf", 13) == 0) {
+			
+			resume (create(stream_proc, 4096, 20, "stream_proc", 2, nargs, args));
+		
+		}
     	if(strncmp(args[0], "futures_test", 13) == 0) {
       		/* create a process with the function as an entry point. */
 
