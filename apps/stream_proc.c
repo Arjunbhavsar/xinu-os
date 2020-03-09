@@ -54,38 +54,49 @@ int32 stream_proc(int nargs, char *args[]) {
         i -= 2;
         }
 	}	
-
-    ptinit(15);
+	//initialise
+    	ptinit(15);
+	//get the pcport number
 	if((pcport = ptcreate(num_streams)) == SYSERR) {
 	    printf("ptcreate failed\n");
 	    return(-1);
 	}
 	
+	
+	//Provinding memory for array of stream of size num_streams
 	struct stream **streamArray = (struct stream **)getmem(sizeof(struct stream*) * num_streams);
+	
 	for (i = 0; i < num_streams; i++) {
-	    
-        struct stream *stream = (struct stream *)getmem(sizeof(struct stream));
-	    stream->queue = (struct data_element **) getmem(sizeof(struct data_element*) * work_queue_depth);
+	    	
+		//providing memory to each stream
+        	struct stream *stream = (struct stream *)getmem(sizeof(struct stream));
+	    	
+		//providing memory to work queue with deapth work_queue_depth
+		stream->queue = (struct data_element **) getmem(sizeof(struct data_element*) * work_queue_depth);
 	
-        for(int j = 0; j < work_queue_depth; j++) {
-            
-            stream->queue[j] = (struct data_element *) getmem(sizeof(struct data_element));
-        }
+		//providing memory to each element in work queue 
+		for(int j = 0; j < work_queue_depth; j++) {
+		    stream->queue[j] = (struct data_element *) getmem(sizeof(struct data_element));
+		}
 	
-        stream->head = 0;
-        stream->tail = 0;
-        
-        stream->items = semcreate(0);
-        stream->mutex = semcreate(1);
+		//initialising the pointers to stream
+		stream->head = 0;
+		stream->tail = 0;
+		
+		//initialising the semaphores
+		stream->items = semcreate(0);
+		stream->mutex = semcreate(1);
 
-        stream->spaces = semcreate(work_queue_depth);
-        
-        streamArray[i] = stream;
-        resume(create(stream_consumer, 1024, 20, 'consumer', 2, i, streamArray[i]));
+		stream->spaces = semcreate(work_queue_depth);
+
+		streamArray[i] = stream;
+		
+		//Calling consumer function and provinding initialized stream as a input.
+		resume(create(stream_consumer, 1024, 20, 'consumer', 2, i, streamArray[i]));
 
 	}
 
-
+	//Parsing the input values
 	int st, ts, v;
 	char *a;
 	for(int i=0;i<n_input;i++){
@@ -95,24 +106,29 @@ int32 stream_proc(int nargs, char *args[]) {
         ts = atoi(a);
         while (*a++ != '\t');
         v = atoi(a);
-
+	
+	//making Stream to wait to achieve synchronisation
         wait(streamArray[st]->spaces);
         wait(streamArray[st]->mutex);
-
+	
+	//Adding the parsed input values to the data element struct. 
         struct data_element *que = streamArray[st]->queue[streamArray[st]->tail % work_queue_depth];
         que->value = v;
         que->time = ts;
-
+	
+	//increasing the pointer for workqueue
         streamArray[st]->tail += 1;
+	
+	//providing signal to stream to allow access once work finished	
         signal(streamArray[st]->mutex);
         signal(streamArray[st]->items);
 
 	}
 	for(i=0; i < num_streams; i++) {
 
-        uint32 pm;
-        pm = ptrecv(pcport);
-        kprintf("process %d exited\n", pm);
+		uint32 pm;
+		pm = ptrecv(pcport);
+		kprintf("process %d exited\n", pm);
 
 	}
 
@@ -133,24 +149,26 @@ void stream_consumer(int32 id, struct stream *str) {
 
 	kprintf("stream_consumer id:%d (pid:%d)\n",id,getpid());
 	
-    struct tscdf *tc = tscdf_init(time_window);
+	struct tscdf *tc = tscdf_init(time_window);
 
 	while(1) {
 	
         wait(str->items);
         wait(str->mutex);
         
+	// fetching the value of element from the work queue
         struct data_element *queueElem = str->queue[str->head % work_queue_depth];
- 
+		
+ 	// Appending the work queue pointer
         str->head +=1;
  
         if (queueElem->time == 0 && queueElem->value==0) {
  
-        kprintf("stream_consumer exiting\n");
-        ptsend(pcport, getpid());
- 
-        return;
-    }
+		kprintf("stream_consumer exiting\n");
+		ptsend(pcport, getpid());
+
+		return;
+    	}
 	
 	tscdf_update(tc,queueElem->time, queueElem->value);
 	count+=1;
