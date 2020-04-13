@@ -52,8 +52,10 @@ int stream_proc_futures(int nargs, char* args[]) {
       i -= 2;
     }
   }
-
+    // initialize all ports 
     ptinit(10);
+
+    //create pc ports 
     if((pcport = ptcreate(num_streams)) == SYSERR) {
         printf("ptcreate failed\n");
         return(-1);
@@ -63,7 +65,7 @@ int stream_proc_futures(int nargs, char* args[]) {
     g_tWindow = time_window;
     g_out_time = output_time;
 
-    // Create array to hold `n_streams` number of futures
+    // Create array to hold `num_streams` number of futures
     if ((farray = (future_t **)getmem(sizeof(future_t *) * (num_streams))) == (future_t **)SYSERR)
     {
         printf("getmem failed\n");
@@ -134,15 +136,17 @@ void stream_consumer_future(int32 id, future_t *f)
     tc = tscdf_init(g_tWindow);
     while (TRUE)
     {
-        de *tempData;
-        future_get(f, tempData);
+        de *temp;
 
-        if (tempData->time == 0 && tempData->value == 0)
+        //Consume the value from future
+        future_get(f, temp);
+
+        if (temp->time == 0 && temp->value == 0)
         {
             break;
         }
 
-        tscdf_update(tc, tempData->time, tempData->value);
+        tscdf_update(tc, temp->time, temp->value);
 
         if (count++ == (g_out_time - 1))
         {
