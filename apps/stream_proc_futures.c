@@ -53,7 +53,7 @@ int stream_proc_futures(int nargs, char* args[]) {
     }
   }
 
-    //ptinit(10);
+    ptinit(10);
     if((pcport = ptcreate(num_streams)) == SYSERR) {
         printf("ptcreate failed\n");
         return(-1);
