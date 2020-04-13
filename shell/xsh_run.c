@@ -92,6 +92,11 @@ shellcmd xsh_run(int nargs, char *args[]) {
  		/* create a process with the function as an entry point. */
       		resume (create((void *)prodcons_bb, 4096, 20, "prodcons_bb", 2, nargs, args));
 		}
+		if(strncmp(args[0], "tscdf_fq", 8) == 0) {
+			
+			resume (create(stream_proc_futures, 4096, 20, "stream_proc", 2, nargs, args));
+		
+		}
 		if(strncmp(args[0], "tscdf", 13) == 0) {
 			
 			resume (create(stream_proc, 4096, 20, "stream_proc", 2, nargs, args));
@@ -100,77 +105,116 @@ shellcmd xsh_run(int nargs, char *args[]) {
     	if(strncmp(args[0], "futures_test", 13) == 0) {
       		/* create a process with the function as an entry point. */
 
-		if(strncmp(args[1],"-pc",13) == 0){
-			
-		//resume (create((void *)futureProdconsSnippet, 4096, 20, "futureProdconsSnippet", 2, nargs, args));
+			if(strncmp(args[1],"-pc",13) == 0){
+				
+				future_t* f_exclusive, * f_shared;
+				f_exclusive = future_alloc(FUTURE_EXCLUSIVE, sizeof(int), 1);
+				f_shared    = future_alloc(FUTURE_SHARED, sizeof(int), 1);
+				
+			// Test FUTURE_EXCLUSIVE
+				resume( create(future_cons, 1024, 20, "fcons1", 1, f_exclusive) );
+				resume( create(future_prod, 1024, 20, "fprod1", 2, f_exclusive, (char*) &one) );
 
-		    future_t* f_exclusive, * f_shared;
-		    f_exclusive = future_alloc(FUTURE_EXCLUSIVE, sizeof(int), 1);
-		    f_shared    = future_alloc(FUTURE_SHARED, sizeof(int), 1);
-		    
-		   // printf("Future_alloc working --%s\n",f_exclusive->mode);
-		 
-		   // Test FUTURE_EXCLUSIVE
-		    resume( create(future_cons, 1024, 20, "fcons1", 1, f_exclusive) );
-		    resume( create(future_prod, 1024, 20, "fprod1", 2, f_exclusive, (char*) &one) );
-
-		    // Test FUTURE_SHARED
-		    resume( create(future_cons, 1024, 20, "fcons2", 1, f_shared) );
-		    resume( create(future_cons, 1024, 20, "fcons3", 1, f_shared) );
-		    resume( create(future_cons, 1024, 20, "fcons4", 1, f_shared) );
-		    resume( create(future_cons, 1024, 20, "fcons5", 1, f_shared) );
-		    resume( create(future_prod, 1024, 20, "fprod2", 2, f_shared, (char*) &two) );
+				// Test FUTURE_SHARED
+				resume( create(future_cons, 1024, 20, "fcons2", 1, f_shared) );
+				resume( create(future_cons, 1024, 20, "fcons3", 1, f_shared) );
+				resume( create(future_cons, 1024, 20, "fcons4", 1, f_shared) );
+				resume( create(future_cons, 1024, 20, "fcons5", 1, f_shared) );
+				resume( create(future_prod, 1024, 20, "fprod2", 2, f_shared, (char*) &two) );
 
 
-
-		 //   printf("All the processes are resumed !!!\n");
-		}
-		else if ( strncmp(args[1],"-f",13)==0){
-			//resume (create((void *)futureFibonachchiSnippet, 4096, 20, "futureFibonachchiSnippet", 2, nargs, args));
-			
-		      int fib = -1, i;
-
-		      fib = atoi(args[2]);
-
-		      if (fib > -1) {
-	   	      	 int final_fib;
-		     	 int future_flags = FUTURE_SHARED; // TODO - add appropriate future mode here
-
-		      // create the array of future pointers
-		     	 if ((fibfut = (future_t **)getmem(sizeof(future_t *) * (fib + 1)))
-		        	  == (future_t **) SYSERR) {
-		       		 printf("getmem failed\n");
-		       		 return(SYSERR);
-		     	 }
-
-		      // get futures for the future array
-		     	 for (i=0; i <= fib; i++) {
-		       		 if((fibfut[i] = future_alloc(future_flags, sizeof(int), 1)) == (future_t *) SYSERR) {
-			          printf("future_alloc failed\n");
-			          return(SYSERR);
-			        }
-		     	 }
-
-		      // spawn fib threads and get final value
-		      // TODO - you need to add your code here
-		     // printf("\nSpawn ffib\n");
-		     // Spwning fib number of threads with seprate inputs 
-			for(int j=0;j<=fib; j++ ){
-			      resume(create(ffib, 4096, 20, "ffib",     1, j));
 			}
-		     // printf("Process Resumed value recieved \n\n");
+			else if ( strncmp(args[1],"-f",13)==0){
+				
+				int fib = -1, i;
+				fib = atoi(args[2]);
 
-			
-		      future_get(fibfut[fib], (char*) &final_fib);
+				if (fib > -1) {
+					int final_fib;
+					int future_flags = FUTURE_SHARED; // TODO - add appropriate future mode here
 
-		      for (i=0; i <= fib; i++) {
-		        future_free(fibfut[i]);
-     			 }
+				// create the array of future pointers
+					if ((fibfut = (future_t **)getmem(sizeof(future_t *) * (fib + 1)))
+						== (future_t **) SYSERR) {
+						printf("getmem failed\n");
+						return(SYSERR);
+					}
+				// get futures for the future array
+					for (i=0; i <= fib; i++) {
+						if((fibfut[i] = future_alloc(future_flags, sizeof(int), 1)) == (future_t *) SYSERR) {
+						printf("future_alloc failed\n");
+						return(SYSERR);
+						}
+					}
 
-			 freemem((char *)fibfut, sizeof(future_t *) * (fib + 1));
-			 printf("Nth Fibonacci value for N=%d is %d\n", fib, final_fib);
-     			 return(OK);
-   		     }
-		}
+				// spawn fib threads and get final value
+				// TODO - you need to add your code here
+				// printf("\nSpawn ffib\n");
+				// Spwning fib number of threads with seprate inputs 
+				for(int j=0;j<=fib; j++ ){
+					resume(create(ffib, 4096, 20, "ffib",     1, j));
+				}
+				// printf("Process Resumed value recieved \n\n");
+
+				future_get(fibfut[fib], (char*) &final_fib);
+
+				for (i=0; i <= fib; i++) {
+					future_free(fibfut[i]);
+					}
+
+				freemem((char *)fibfut, sizeof(future_t *) * (fib + 1));
+				printf("Nth Fibonacci value for N=%d is %d\n", fib, final_fib);
+					return(OK);
+				}
+			}else if ( strncmp(args[1],"-fq1",13)==0){
+				int three = 3, four = 4, five = 5, six = 6;
+				future_t *f_queue;
+				f_queue = future_alloc(FUTURE_QUEUE, sizeof(int), 3);
+
+				resume(create(future_cons, 1024, 20, "fcons6", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons7", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons8", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons9", 1, f_queue));
+				resume(create(future_prod, 1024, 20, "fprod3", 2, f_queue, (char *)&three));
+				resume(create(future_prod, 1024, 20, "fprod4", 2, f_queue, (char *)&four));
+				resume(create(future_prod, 1024, 20, "fprod5", 2, f_queue, (char *)&five));
+				resume(create(future_prod, 1024, 20, "fprod6", 2, f_queue, (char *)&six));
+				sleep(1);
+
+			}else if ( strncmp(args[1],"-fq2",13)==0){
+				int seven = 7, eight = 8, nine=9, ten = 10, eleven = 11;
+				future_t *f_queue;
+				f_queue = future_alloc(FUTURE_QUEUE, sizeof(int), 3);
+
+				resume(create(future_prod, 1024, 20, "fprod10", 2, f_queue, (char *)&seven));
+				resume(create(future_prod, 1024, 20, "fprod11", 2, f_queue, (char *)&eight));
+				resume(create(future_prod, 1024, 20, "fprod12", 2, f_queue, (char *)&nine));
+				resume(create(future_prod, 1024, 20, "fprod13", 2, f_queue, (char *)&ten));
+				resume(create(future_prod, 1024, 20, "fprod13", 2, f_queue, (char *)&eleven));
+
+				resume(create(future_cons, 1024, 20, "fcons14", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons15", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons16", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons17", 1, f_queue));
+				resume(create(future_cons, 1024, 20, "fcons18", 1, f_queue));
+				sleep(1);
+				
+			}else if ( strncmp(args[1],"-fq3",13)==0){
+				
+				int three = 3, four = 4, five = 5, six = 6;
+				future_t *f_queue;
+				f_queue = future_alloc(FUTURE_QUEUE, sizeof(int), 3);
+
+				resume( create(future_cons, 1024, 20, "fcons6", 1, f_queue) );
+				resume( create(future_prod, 1024, 20, "fprod3", 2, f_queue, (char*) &three) );
+				resume( create(future_prod, 1024, 20, "fprod4", 2, f_queue, (char*) &four) );
+				resume( create(future_prod, 1024, 20, "fprod5", 2, f_queue, (char*) &five) );
+				resume( create(future_prod, 1024, 20, "fprod6", 2, f_queue, (char*) &six) );
+				resume( create(future_cons, 1024, 20, "fcons7", 1, f_queue) );
+				resume( create(future_cons, 1024, 20, "fcons8", 1, f_queue) );
+				resume( create(future_cons, 1024, 20, "fcons9", 1, f_queue) );
+				sleep(1);
+			}
+
     	}
   }

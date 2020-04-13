@@ -21,6 +21,13 @@ typedef struct future_t {
   pid32 pid;
   qid16 set_queue;
   qid16 get_queue;
+
+
+  // new fields
+  uint16 max_elems;
+  uint16 count;
+  uint16 head;
+  uint16 tail;
 } future_t;
 
 /* Interface for the Futures system calls */
@@ -29,4 +36,10 @@ syscall future_free(future_t*);
 syscall future_get(future_t*, char*);
 syscall future_set(future_t*, char*);
 
+
+extern struct future_t **farray;
+int stream_proc_futures(int nargs, char* args[]);
+void stream_consumer_future(int32 id, future_t *f);
 #endif /* _FUTURE_H_ */
+
+

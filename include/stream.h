@@ -1,4 +1,5 @@
 #include <xinu.h>
+
 typedef struct data_element {
   int32 time;
   int32 value;
@@ -17,3 +18,4 @@ struct stream {
 extern struct stream **streamArray;
 int stream_proc(int nargs, char* args[]) ;
  
+
