@@ -239,19 +239,19 @@ void fs_printfreemask(void)
 
 int fs_open(char *filename, int flags)
 {
-     if (fsd.root_dir.numentries <= 0)
-    {
-        return SYSERR;
-    }
 
     if (flags != O_RDONLY && flags != O_WRONLY && flags != O_RDWR)
     {
         printf("Invalid File Mode");
         return SYSERR;
     }
-    
-    struct inode node;    
     int i;
+    struct inode node;
+
+    if (fsd.root_dir.numentries <= 0)
+    {
+        return SYSERR;
+    }
 
     for (i = 0; i < fsd.root_dir.numentries; i++)
     {
@@ -260,14 +260,12 @@ int fs_open(char *filename, int flags)
             int inode_num = fsd.root_dir.entry[i].inode_num;
 
             fs_get_inode_by_num(0, inode_num, &node);
-            
-            oft[i].in = node;
-            oft[i].de = &fsd.root_dir.entry[i];
-            oft[i].flag = flags;
 
             oft[i].state = FSTATE_OPEN;
             oft[i].fileptr = 0;
-            
+            oft[i].in = node;
+            oft[i].de = &fsd.root_dir.entry[i];
+            oft[i].flag = flags;
 
             fs_put_inode_by_num(0, inode_num, &oft[i].in);
 
@@ -308,7 +306,6 @@ int fs_create(char *filename, int mode)
             }
         }
         struct inode in;
-
         int get_inode_status = fs_get_inode_by_num(0, ++fsd.inodes_used, &in);
 
         in.id = fsd.inodes_used;
@@ -333,15 +330,14 @@ int fs_seek(int fd, int offset)
 {
     int fileptr = oft[fd].fileptr + offset;
 
-   if (fileptr > oft[fd].in.size)
-    {
-        return SYSERR;
-    }
     if (fd < 0 || fd >= NUM_FD)
     {
         return SYSERR;
     }
- 
+    if (fileptr > oft[fd].in.size)
+    {
+        return SYSERR;
+    }
     oft[fd].fileptr = fileptr;
     return OK;
 }
@@ -350,7 +346,6 @@ int fs_read(int fd, void *buf, int nbytes)
 {
     int i, bytes;
     struct filetable ft = oft[fd];
-    
     struct inode node = ft.in;
     int inode_block = (ft.fileptr / fsd.blocksz);
     int offset = (ft.fileptr % fsd.blocksz);
@@ -417,12 +412,9 @@ int fs_read(int fd, void *buf, int nbytes)
 int fs_write(int fd, void *buf, int nbytes)
 {
     int i, bytes;
-    
     struct filetable ft = oft[fd];
     struct inode node = ft.in;
-    
     int offset = (ft.fileptr % fsd.blocksz);
-    
     int inode_block = (ft.fileptr / fsd.blocksz);
     int new_block = fsd.blocksz - offset;
     int nnbytes = nbytes;
@@ -455,19 +447,18 @@ int fs_write(int fd, void *buf, int nbytes)
             }
             else if (node.blocks[inode_block] == 0)
             {
-                int blocks, k;
+                int blocks, j;
                 blocks = fsd.nblocks;
 
-                for (k = 0; k < blocks; k++)
+                for (j = 0; j < blocks; j++)
                 {
-                    if (fs_getmaskbit(k) == 0)
+                    if (fs_getmaskbit(j) == 0)
                     {
-                        i = k;
+                        i = j;
                     }
                 }
 
                 memcpy(node.blocks + inode_block, &i, sizeof(int));
-                
                 memcpy(&((oft + fd)->in), &(node), sizeof(struct inode));
 
                 ft.in = node;
@@ -475,19 +466,28 @@ int fs_write(int fd, void *buf, int nbytes)
                 fs_put_inode_by_num(0, node.id, &node);
                 fs_setmaskbit(i);
             }
-             if (new_block <= nbytes)
+
+            if (new_block > nbytes)
+            {
+                bs_bwrite(0, i, offset, buf, nbytes);
+
+                ft.fileptr = ft.fileptr + nbytes;
+                nbytes = 0;
+
+                memcpy(oft + fd, &ft, sizeof(struct filetable));
+                return nnbytes;
+            }
+            if (new_block <= nbytes)
             {
                 if (inode_block == INODEBLOCKS - 1)
                 {
-                    printf("Size exceeded\n");
+                    printf("Size Exceeded\n");
                     bytes = nnbytes - nbytes;
                     return bytes;
                 }
 
                 bs_bwrite(0, i, offset, buf, new_block);
-               
                 buf = buf + new_block;
-                
                 nbytes = nbytes - new_block;
                 ft.fileptr = ft.fileptr + new_block;
 
@@ -496,18 +496,6 @@ int fs_write(int fd, void *buf, int nbytes)
                 inode_block++;
                 offset = 0;
             }
-            if (new_block > nbytes)
-            {
-                bs_bwrite(0, i, offset, buf, nbytes);
-
-                ft.fileptr = ft.fileptr + nbytes;
-               
-                nbytes = 0;
-
-                memcpy(oft + fd, &ft, sizeof(struct filetable));
-                return nnbytes;
-            }
-           
         }
     }
 
@@ -525,15 +513,10 @@ int fs_link(char *src_filename, char *dst_filename)
         if (strncmp(src_filename, fsd.root_dir.entry[i].name, FILENAMELEN + 1) == 0)
         {
             file_table.de = &(fsd.root_dir.entry[fsd.root_dir.numentries++]);
-            
             (file_table.de)->inode_num = fsd.root_dir.entry[i].inode_num;
-           
             strcpy((file_table.de)->name, dst_filename);
-           
             fs_get_inode_by_num(0, fsd.root_dir.entry[i].inode_num, &node);
-            
             node.nlink = node.nlink + 1;
-            
             fs_put_inode_by_num(0, fsd.root_dir.entry[i].inode_num, &node);
             return OK;
         }
@@ -543,7 +526,7 @@ int fs_link(char *src_filename, char *dst_filename)
 
 int fs_unlink(char *filename)
 {
-    int i, k;
+    int i, j;
     struct inode node;
     struct filetable file_table;
     for (i = 0; i < fsd.root_dir.numentries; i++)
@@ -552,29 +535,25 @@ int fs_unlink(char *filename)
         {
             fs_get_inode_by_num(0, fsd.root_dir.entry[i].inode_num, &node);
 
+            if (node.nlink > 1)
+            {
+                node.nlink -= 1;
+                fs_put_inode_by_num(0, fsd.root_dir.entry[i].inode_num, &node);
+                fsd.root_dir.numentries--;
+                return OK;
+            }
 
-            if (node.nlink == 1)
+            else if (node.nlink == 1)
             {
                 int blength = sizeof(node.blocks) / sizeof(node.blocks[0]);
-                for (k = 0; k < blength; k++)
+                for (j = 0; j < blength; j++)
                 {
-                    fs_clearmaskbit(k);
+                    fs_clearmaskbit(j);
                 }
                 fs_put_inode_by_num(0, fsd.root_dir.entry[i].inode_num, &node);
                 fsd.root_dir.numentries--;
                 return OK;
             }
-            else if (node.nlink > 1)
-            {
-                node.nlink -= 1;
-                
-                fs_put_inode_by_num(0, fsd.root_dir.entry[i].inode_num, &node);
-                
-                fsd.root_dir.numentries--;
-                return OK;
-            }
-
-            
         }
     }
     return SYSERR;
