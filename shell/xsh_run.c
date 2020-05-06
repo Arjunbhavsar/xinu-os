@@ -9,6 +9,7 @@
 #include <future_test.h>
 #include <stream.h>
 #include <fstest.h>
+#include <tree.h>
 /*------------------------------------------------------------------------
  * xsh_run - obtain and print the current month, day, year, and time
  *------------------------------------------------------------------------
@@ -89,6 +90,12 @@ shellcmd xsh_run(int nargs, char *args[]) {
    	 */
    	 args++;
    	 nargs--;
+
+	
+	if(strncmp(args[0], "rbt", 3) == 0) {
+	/* create a process with the function as an entry point. */
+		resume (create((void *)redBlackTreeTest, 4096, 20, "fstest", 2, nargs, args));
+	}
     
 	if(strncmp(args[0], "fstest", 6) == 0) {
 	/* create a process with the function as an entry point. */
