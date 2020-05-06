@@ -1,9 +1,58 @@
+Introduction - 
+Binary Search Tree has the Avarage time complexity for 
+insertion, deletion and search operations is O(Log n).
+But in worst case scenarios, The complexity of the above operations goes to O(n).
+as we do not have the balanced tree. There can be the option of AVL Tree, to have the balanced 
+tree But To make the tree Balanced, we need more number of rotations in AVL tree.
+So avoid multiple iterations Red Black tree is used.
+
 Red Black Tree -
+It's Binary serach tree with one extra element which represents the color.
+The Main feature of the Red Black tree is, It insures that it takes O(log n) time compexity  
+for almost all the activities as insert, delete and search.
+The main difrence in Red Black tree and AVL tree is, It takes maximum of 2 rotations 
+to balance tree.
 
-
+The Tree to be Red Black Tree, It should follow certain set of rules and can be stated as below,
 Rules -
+1) It should be self balancing Binary Search tree.
+2) Every node is either red or black.
+3) Every leaf i.e. nleaf which is null is always Black.
+4) If the node is red, then both of its children need to be black.
+5) Every path from a node to its descendent NIL, i.e. nleaf node has same number of black nodes.
 
-
-
+Insertion-  Here we need to verify multiple cases for the tree to maintain its Balanced
+which can given as follows.
 
 Rules to follow while insertion- 
+1) If tree is empty, Then create the new node as root node and set the colour to black.
+2) If tree is not empty then create the new node as leaf node with colour Red.
+3) If Parent of the new node is black the exit.
+4) If the parent of the new node is red, 
+    Then check the colour of parents siblings(i.e. uncle of of the newnode)
+    a) if colour is balck, or Null then do suitable rotation and reorder.
+    b) if the colour is red, Then Recolor, Then check the parent's parent of the newnode
+     is not a root node, Then Recolorand check Again.
+
+Deletion - 
+Deletion is one of the tricky thing to achieve as every time when we delete an element,
+We need to maintain the balance of the tree by rotating the tree.
+
+there are multiple cases that needs attention while deletion of the node.
+1) If element to be deleted is red, then just delete it. No need to check anything further.
+2) If node is Double black- i.e. the node and its child both are black,
+    the we need to remove the double black.
+3) If Double Blacks' sibling is black & both of its children are black.
+
+
+Search-
+Search of the elementis similar here as to the Binary Serach tree, And it takes O(Log n)
+time complexity. 
+here we use Iterative approach to lookout for the node to search.
+If the value to be search is less than the key in node then we search the left subtree or else 
+we serch the value in right subtree.
+then once the key is found the whole node is returned.
+
+Print.c - 
+Here we traverce the whole tree and print each element in the tree.
+Used recursion to achieve the traversal in the whole tree.
